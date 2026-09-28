@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Medication Price Challenge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    box-sizing: border-box;
+    --stage-0:#0A0E1A;
+    --stage-1:#111729;
+    --stage-2:#1B2440;
+    --panel:#141B2E;
+    --line: rgba(255,255,255,0.08);
+    --gold:#F4B31A;
+    --gold-dim:#8A6B1E;
+    --teal:#2FE0C4;
+    --coral:#FF6B57;
+    --paper:#FBF7EC;
+    --ink:#161314;
+    --text-hi:#FDFBF3;
+    --text-mid:#B9C0D6;
+    --text-dim:#7783A1;
+    --font-display: 'Bebas Neue', Impact, 'Arial Narrow', sans-serif;
+    --font-body: 'Manrope', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{ box-sizing: border-box; }
+  html,body{
+    height:100%;
+    margin:0;
+    background: var(--stage-0);
+    color: var(--text-hi);
+    font-family: var(--font-body);
+  }
+  html{ scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body{
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(244,179,26,0.10), transparent 60%),
+      radial-gradient(900px 600px at 90% 110%, rgba(47,224,196,0.08), transparent 60%),
+      var(--stage-0);
+    overflow-x:hidden;
+  }
+  #app{
+    min-height:100%;
+    display:grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  #app.host-mode{ grid-template-columns: 1fr 380px; }
+  @media (max-width: 900px){
+    #app.host-mode{ grid-template-columns: 1fr; }
+  }
+
+  /* ---------- Topbar ---------- */
+  .topbar{
+    grid-column: 1 / -1;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent);
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand .mark{
+    width:34px;height:34px;border-radius:9px;
+    background: conic-gradient(from 210deg, var(--gold), var(--coral), var(--teal), var(--gold));
+    display:flex;align-items:center;justify-content:center;font-size:18px;
+  }
+  .brand .name{ font-family: var(--font-display); letter-spacing:0.5px; font-size:22px; line-height:1; color: var(--text-hi); }
+  .demo-flag{
+    font-size:11px; font-weight:700; color: var(--stage-0);
+    background: var(--gold); padding: 4px 9px; border-radius: 5px;
+    letter-spacing: 0.4px;
+  }
+  .topbar-right{ display:flex; align-items:center; gap:10px; }
+  .chip-btn{
+    font-family: var(--font-body); font-weight:700; font-size:13px;
+    background: var(--stage-2); color: var(--text-hi); border:1px solid var(--line);
+    padding:8px 14px; border-radius:8px; cursor:pointer; transition: transform .12s ease, background .15s ease;
+  }
+  .chip-btn:hover{ background:#232E4E; }
+  .chip-btn:active{ transform: scale(0.97); }
+  .chip-btn.active{ background: var(--gold); color:#241a02; border-color: var(--gold); }
+
+  /* ---------- Stage (audience-facing) ---------- */
+  #stage{
+    padding: 28px 32px 60px;
+    display:flex; flex-direction:column; align-items:center;
+    min-height: 0;
+  }
+  .stage-inner{ width:100%; max-width: 1080px; margin: 0 auto; }
+
+  .eyebrow-note{
+    text-align:center; color: var(--text-dim); font-size:13px; margin: 2px 0 22px;
+  }
+
+  /* Home */
+  .home-hero{ text-align:center; padding: 46px 0 10px; }
+  .home-hero h1{
+    font-family: var(--font-display);
+    font-size: clamp(46px, 8vw, 96px);
+    line-height: 0.95; margin: 0 0 6px;
+    background: linear-gradient(180deg, #FFF6DA, var(--gold) 70%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    letter-spacing: 1px;
+  }
+  .home-hero p.sub{ color: var(--text-mid); font-size: clamp(16px, 2.2vw, 22px); margin: 0 0 40px; font-weight:600; }
+  .mode-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 820px){ .mode-grid{ grid-template-columns: 1fr; } }
+  .mode-card{
+    background: linear-gradient(155deg, var(--stage-2), var(--panel));
+    border: 1px solid var(--line); border-radius: 16px; padding: 28px 22px;
+    text-align:left; cursor:pointer; color:inherit;
+    transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+    position:relative; overflow:hidden;
+  }
+  .mode-card::after{
+    content:""; position:absolute; inset:auto -40% -60% auto; width:220px; height:220px; border-radius:50%;
+    background: radial-gradient(circle, var(--accent, var(--gold)) 0%, transparent 70%); opacity:.18;
+  }
+  .mode-card:hover{ transform: translateY(-4px); border-color: var(--accent, var(--gold)); box-shadow: 0 14px 40px rgba(0,0,0,0.35); }
+  .mode-card .num{ font-family: var(--font-display); font-size:15px; letter-spacing:2px; color: var(--accent, var(--gold)); }
+  .mode-card h3{ font-family: var(--font-display); font-size:30px; letter-spacing:0.5px; margin: 6px 0 8px; }
+  .mode-card p{ color: var(--text-mid); font-size:14.5px; line-height:1.5; margin:0; }
+  .mode-card .go{ margin-top:16px; font-weight:800; font-size:13px; color: var(--accent, var(--gold)); }
+
+  /* Progress */
+  .progress-row{ display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom: 20px; }
+  .progress-pill{
+    font-family: var(--font-display); letter-spacing:1px; font-size:15px;
+    background: var(--stage-2); border:1px solid var(--line); padding:7px 16px; border-radius: 999px; color: var(--text-mid);
+  }
+  .progress-track{ width:220px; height:8px; border-radius:99px; background: var(--stage-2); overflow:hidden; }
+  .progress-fill{ height:100%; background: linear-gradient(90deg, var(--teal), var(--gold)); transition: width .5s ease; }
+
+  /* Med card */
+  .med-card{
+    background: linear-gradient(160deg, var(--paper), #F1E9D3);
+    color: var(--ink); border-radius: 22px; padding: 30px 34px;
+    display:grid; grid-template-columns: 130px 1fr; gap: 26px; align-items:center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  }
+  @media (max-width: 640px){ .med-card{ grid-template-columns: 1fr; text-align:center; } }
+  .med-icon{
+    width:118px; height:118px; border-radius:20px; display:flex; align-items:center; justify-content:center;
+    font-size:56px; background: radial-gradient(circle at 35% 30%, #fff, #E7DCBB); border:1px solid rgba(0,0,0,0.06);
+    margin: 0 auto;
+  }
+  .med-body .brand-tag{ font-weight:800; font-size:12.5px; letter-spacing:0.6px; color:#8A6B1E; text-transform:uppercase; }
+  .med-body h2{ font-family: var(--font-display); font-size: clamp(30px,4vw,44px); margin: 2px 0 8px; letter-spacing:0.4px; }
+  .med-meta{ display:flex; flex-wrap:wrap; gap:8px 18px; margin: 8px 0 10px; font-size:13.5px; color:#5b5443; }
+  .med-meta b{ color:#241f13; }
+  .med-desc{ font-size:15px; line-height:1.5; color:#3a3527; margin:0; }
+
+  /* Prompt */
+  .prompt-banner{
+    text-align:center; margin: 26px 0 18px;
+  }
+  .prompt-banner h3{
+    font-family: var(--font-display); font-size: clamp(26px,4.4vw,42px); letter-spacing:0.5px; margin:0;
+    color: var(--text-hi);
+  }
+  .prompt-banner .hint{ color: var(--text-dim); font-size:14px; margin-top:6px; }
+
+  /* Countdown */
+  .timer-wrap{ display:flex; justify-content:center; margin: 6px 0 22px; }
+  .timer-ring{ position:relative; width:120px; height:120px; }
+  .timer-ring svg{ width:100%; height:100%; transform: rotate(-90deg); }
+  .timer-ring circle{ fill:none; stroke-width:8; }
+  .timer-ring .bg{ stroke: var(--stage-2); }
+  .timer-ring .fg{ stroke: var(--gold); stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+  .timer-num{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family: var(--font-display); font-size:38px; }
+  .timer-num.urgent{ color: var(--coral); animation: pulse 0.6s ease infinite; }
+
+  @keyframes pulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.12);} }
+
+  /* Reveal area (Game 1) */
+  .reveal-grid{ display:grid; grid-template-columns: 1fr auto 1fr; gap: 18px; align-items:center; margin: 20px 0; }
+  @media (max-width: 700px){ .reveal-grid{ grid-template-columns: 1fr; } }
+  .value-card{
+    border-radius:18px; padding: 22px 18px; text-align:center;
+    border:1px solid var(--line); background: var(--panel);
+  }
+  .value-card .label{ font-size:13px; font-weight:800; letter-spacing:1px; color: var(--text-dim); margin-bottom:8px; }
+  .value-card .amount{ font-family: var(--font-display); font-size: clamp(38px,6vw,58px); letter-spacing:0.5px; }
+  .value-card.guess .amount{ color: var(--text-mid); }
+  .value-card.actual{ background: linear-gradient(160deg, rgba(244,179,26,0.16), rgba(244,179,26,0.02)); border-color: var(--gold-dim); }
+  .value-card.actual .amount{ color: var(--gold); }
+  .diff-arrow{ text-align:center; }
+  .diff-arrow .arrow{ font-size:26px; color: var(--text-dim); }
+  .diff-arrow .amt{ font-family: var(--font-display); font-size:22px; color: var(--coral); }
+
+  .verdict{ text-align:center; margin: 6px 0 4px; }
+  .verdict .badge{
+    display:inline-block; font-family: var(--font-display); font-size: clamp(28px,5vw,48px);
+    padding: 10px 28px; border-radius: 14px; letter-spacing:1px;
+    animation: pop .45s cubic-bezier(.2,1.4,.4,1);
+  }
+  @keyframes pop{ 0%{ transform: scale(0.4); opacity:0; } 70%{ transform: scale(1.08);} 100%{ transform: scale(1); opacity:1; } }
+  .verdict .sub{ margin-top:10px; color: var(--text-mid); font-size:16px; }
+  .badge.tier-incredible{ background: linear-gradient(120deg, #F4B31A, #FFDE7A); color:#241a02; }
+  .badge.tier-veryclose{ background: linear-gradient(120deg, #2FE0C4, #8CFFEB); color:#022b25; }
+  .badge.tier-notbad{ background: linear-gradient(120deg, #8FA3FF, #C6D0FF); color:#151a3a; }
+  .badge.tier-wayoff{ background: linear-gradient(120deg, #FF6B57, #FFA98F); color:#3a0f08; }
+
+  .points-toast{
+    text-align:center; margin-top: 14px; font-family: var(--font-display);
+    font-size: 22px; color: var(--gold); letter-spacing:0.5px;
+  }
+
+  /* Game 2 chain */
+  .chain-row{ display:flex; align-items:center; justify-content:center; gap:10px; margin: 4px 0 24px; flex-wrap:wrap; }
+  .chain-node{
+    width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family: var(--font-display); font-size:16px; border:2px solid var(--line); color: var(--text-dim);
+    background: var(--stage-2);
+  }
+  .chain-node.done-correct{ border-color: var(--teal); color: var(--teal); background: rgba(47,224,196,0.12); }
+  .chain-node.done-wrong{ border-color: var(--coral); color: var(--coral); background: rgba(255,107,87,0.12); }
+  .chain-node.current{ border-color: var(--gold); color: var(--gold); box-shadow: 0 0 0 4px rgba(244,179,26,0.15); }
+  .chain-connector{ width:22px; height:2px; background: var(--line); }
+
+  .known-price-strip{
+    display:flex; align-items:center; justify-content:center; gap:16px; margin: -4px 0 22px; color: var(--text-mid); font-size:15px;
+  }
+  .known-price-strip b{ color: var(--gold); font-family: var(--font-display); font-size:20px; letter-spacing:0.5px; }
+
+  .hilo-buttons{ display:flex; gap:18px; justify-content:center; margin: 10px 0 8px; }
+  .hilo-btn{
+    font-family: var(--font-display); font-size:26px; letter-spacing:1px;
+    padding: 18px 40px; border-radius: 16px; border:1px solid var(--line);
+    background: var(--panel); color: var(--text-hi); min-width:200px;
+  }
+  .hilo-btn.up{ border-color: rgba(47,224,196,0.4); }
+  .hilo-btn.down{ border-color: rgba(255,107,87,0.4); }
+  .hilo-btn.selected.up{ background: rgba(47,224,196,0.18); color: var(--teal); }
+  .hilo-btn.selected.down{ background: rgba(255,107,87,0.18); color: var(--coral); }
+
+  .streak-banner{
+    text-align:center; font-family: var(--font-display); font-size: clamp(22px,3.4vw,34px);
+    color: var(--gold); margin: 6px 0 18px; letter-spacing:0.5px;
+  }
+
+  /* Game 3 vs */
+  .vs-grid{ display:grid; grid-template-columns:1fr auto 1fr; gap:18px; align-items:stretch; margin: 10px 0 20px; }
+  @media (max-width: 760px){ .vs-grid{ grid-template-columns:1fr; } }
+  .vs-card{
+    background: linear-gradient(160deg, var(--paper), #F1E9D3); color: var(--ink);
+    border-radius:20px; padding:22px 20px;
+  }
+  .vs-card .kind{ font-family: var(--font-display); font-size:14px; letter-spacing:2px; color:#8A6B1E; }
+  .vs-card h3{ font-family: var(--font-display); font-size: clamp(24px,3.6vw,34px); margin:4px 0 8px; }
+  .vs-card .row{ font-size:13.5px; color:#5b5443; margin: 3px 0; }
+  .vs-card .row b{ color:#241f13; }
+  .vs-mid{ display:flex; align-items:center; justify-content:center; }
+  .vs-mid .badge-vs{
+    font-family: var(--font-display); font-size:26px; width:64px; height:64px; border-radius:50%;
+    background: var(--gold); color:#241a02; display:flex; align-items:center; justify-content:center;
+  }
+
+  .vs-result{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin: 18px 0; }
+  @media (max-width: 700px){ .vs-result{ grid-template-columns:1fr; } }
+
+  .multiplier-banner{
+    text-align:center; margin: 18px 0 6px; font-family: var(--font-display);
+    font-size: clamp(30px,5vw,52px); color: var(--coral); letter-spacing:0.5px;
+  }
+  .multiplier-sub{ text-align:center; color: var(--text-mid); font-size:15px; margin-bottom: 10px; }
+
+  /* Leaderboard */
+  .lb-list{ display:flex; flex-direction:column; gap:10px; margin-top: 10px; }
+  .lb-row{
+    display:flex; align-items:center; gap:14px; background: var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding: 14px 18px; transition: transform .5s ease, background .3s ease;
+  }
+  .lb-row.rank-1{ border-color: var(--gold); background: linear-gradient(90deg, rgba(244,179,26,0.14), var(--panel)); }
+  .lb-rank{ font-family: var(--font-display); font-size:22px; width:34px; text-align:center; color: var(--text-dim); }
+  .lb-row.rank-1 .lb-rank{ color: var(--gold); }
+  .lb-name{ flex:1; font-weight:800; font-size:17px; }
+  .lb-score{ font-family: var(--font-display); font-size:24px; color: var(--teal); }
+  .lb-bump{ animation: bump .5s ease; }
+  @keyframes bump{ 0%{ background: rgba(47,224,196,0.28);} 100%{ background: var(--panel);} }
+
+  .winner-hero{ text-align:center; padding: 30px 0; }
+  .winner-hero .trophy{ font-size: 70px; }
+  .winner-hero h2{ font-family: var(--font-display); font-size: clamp(38px,7vw,72px); margin:6px 0; color: var(--gold); }
+  .winner-hero .score{ font-family: var(--font-display); font-size: 30px; color: var(--text-hi); }
+
+  .btn-row{ display:flex; gap:12px; justify-content:center; margin-top: 22px; flex-wrap:wrap; }
+  .btn{
+    font-family: var(--font-body); font-weight:800; font-size:14.5px; letter-spacing:0.2px;
+    padding: 13px 22px; border-radius: 12px; border:none; cursor:pointer; color:#1a1305;
+    background: linear-gradient(180deg, #FFDE7A, var(--gold));
+    box-shadow: 0 8px 20px rgba(244,179,26,0.25);
+    transition: transform .12s ease;
+  }
+  .btn:hover{ transform: translateY(-2px); }
+  .btn:active{ transform: translateY(0) scale(0.98); }
+  .btn.secondary{ background: var(--stage-2); color: var(--text-hi); box-shadow:none; border:1px solid var(--line); }
+  .btn.ghost{ background: transparent; color: var(--text-mid); border:1px solid var(--line); box-shadow:none; }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; transform:none; }
+
+  /* ---------- Host dock ---------- */
+  #hostDock{
+    border-left: 1px solid var(--line);
+    background: var(--stage-1);
+    padding: 18px 18px 40px;
+    overflow-y: auto;
+    display:none;
+  }
+  #app.host-mode #hostDock{ display:block; }
+  .dock-title{ font-family: var(--font-display); font-size:20px; letter-spacing:1px; color: var(--text-hi); margin: 4px 0 4px; }
+  .dock-sub{ color: var(--text-dim); font-size:12.5px; margin-bottom:16px; }
+  .dock-section{ background: var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:14px; }
+  .dock-section h4{ margin:0 0 10px; font-size:12.5px; letter-spacing:0.8px; color: var(--text-dim); text-transform:uppercase; font-weight:800; }
+  .dock-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .dock-grid .btn, .dock-grid .btn.secondary{ padding: 10px 8px; font-size:13px; }
+  .field-label{ font-size:12px; color: var(--text-dim); margin: 8px 0 4px; font-weight:700; }
+  .field-input{
+    width:100%; padding:10px 12px; border-radius:9px; border:1px solid var(--line);
+    background: var(--stage-2); color: var(--text-hi); font-family: var(--font-body); font-size:15px; font-weight:700;
+  }
+  .field-input:focus{ outline: 2px solid var(--gold); outline-offset:1px; }
+  .now-playing{
+    display:flex; align-items:center; gap:8px; font-size:13px; color: var(--text-mid); margin-bottom: 10px;
+    background: rgba(244,179,26,0.08); border:1px solid var(--gold-dim); padding: 8px 10px; border-radius:9px;
+  }
+  .dot{ width:8px; height:8px; border-radius:50%; background: var(--gold); flex-shrink:0; }
+  .team-row{ display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+  .team-row input[type=text]{ flex:1; }
+  .team-row select{ width:auto; }
+  .small-btn{
+    background: var(--stage-2); border:1px solid var(--line); color: var(--text-hi); border-radius:7px;
+    padding:8px 10px; font-size:12px; cursor:pointer; font-weight:700;
+  }
+  .active-team-pill{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background: rgba(47,224,196,0.1); border:1px solid rgba(47,224,196,0.35); border-radius:9px; padding:8px 10px; margin-bottom:10px; font-size:13px;
+  }
+  .mini-note{ font-size:11.5px; color: var(--text-dim); line-height:1.4; margin-top:6px; }
+  .steps-hint{ font-size:12.5px; color: var(--teal); background: rgba(47,224,196,0.08); border:1px solid rgba(47,224,196,0.25); padding:9px 10px; border-radius:9px; margin-bottom:12px; }
+  ::-webkit-scrollbar{ width:10px; }
+  ::-webkit-scrollbar-thumb{ background: var(--stage-2); border-radius:8px; }
+
+  .visually-hidden{ position:absolute; width:1px;height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+  a, button{ font-family: inherit; }
+  :focus-visible{ outline: 2px solid var(--teal); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark">💊</div>
+      <div class="name">THE MEDICATION PRICE CHALLENGE</div>
+      <span class="demo-flag">DEMO DATA — FOR ILLUSTRATION ONLY</span>
+    </div>
+    <div class="topbar-right">
+      <button class="chip-btn" id="soundToggle" type="button">🔊 Sound On</button>
+      <button class="chip-btn" id="homeBtn" type="button">🏠 Home</button>
+      <button class="chip-btn active" id="modeToggle" type="button">🎛️ Host View</button>
+    </div>
+  </div>
+  <main id="stage"></main>
+  <aside id="hostDock"></aside>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================
+   1. DEMO MEDICATION DATA  (edit this array to customize)
+   ========================================================= */
+const MEDS = [
+  { id:1, name:"Panadol Extra", brand:"Panadol", genericName:"Paracetamol + Caffeine", category:"Painkiller", dosage:"500mg / 65mg", form:"Tablets", pack:"24 tablets", icon:"💊",
+    description:"A fast-acting tablet for headaches and everyday aches, with a touch of caffeine to boost relief.",
+    use:"Relief of headaches, fever and mild-to-moderate pain.",
+    genericPrice:6, brandPrice:22 },
+  { id:2, name:"Brufen 400", brand:"Brufen", genericName:"Ibuprofen", category:"Painkiller", dosage:"400mg", form:"Tablets", pack:"20 tablets", icon:"💊",
+    description:"An anti-inflammatory tablet often used for muscle pain, period pain and mild fever.",
+    use:"Pain, inflammation and fever.",
+    genericPrice:7, brandPrice:24 },
+  { id:3, name:"Calpol Syrup", brand:"Calpol", genericName:"Paracetamol", category:"Fever", dosage:"120mg/5ml", form:"Oral Syrup", pack:"100ml bottle", icon:"🧴",
+    description:"A gentle, sweet-tasting syrup used to bring down fever and ease mild pain, mainly for children.",
+    use:"Fever and mild pain relief in children.",
+    genericPrice:9, brandPrice:26 },
+  { id:4, name:"Panadol Cold & Flu", brand:"Panadol", genericName:"Paracetamol + Phenylephrine", category:"Cold & Flu", dosage:"500mg / 5mg", form:"Tablets", pack:"20 tablets", icon:"💊",
+    description:"A daytime tablet that eases blocked nose, headache and fever together during a cold.",
+    use:"Cold and flu symptom relief.",
+    genericPrice:8, brandPrice:25 },
+  { id:5, name:"Zyrtec", brand:"Zyrtec", genericName:"Cetirizine", category:"Allergy", dosage:"10mg", form:"Tablets", pack:"10 tablets", icon:"💊",
+    description:"A once-daily tablet that calms sneezing, itching and runny nose from allergies.",
+    use:"Allergy and hay-fever relief.",
+    genericPrice:6, brandPrice:21 },
+  { id:6, name:"Claritin", brand:"Claritin", genericName:"Loratadine", category:"Allergy", dosage:"10mg", form:"Tablets", pack:"10 tablets", icon:"💊",
+    description:"A non-drowsy allergy tablet taken once a day to keep symptoms under control.",
+    use:"Allergy relief without drowsiness.",
+    genericPrice:7, brandPrice:23 },
+  { id:7, name:"Gaviscon", brand:"Gaviscon", genericName:"Alginate + Antacid", category:"Antacid", dosage:"500mg/213mg", form:"Chewable Tablets", pack:"24 tablets", icon:"💊",
+    description:"A chewable tablet that forms a soothing layer over stomach acid after meals.",
+    use:"Heartburn and acid reflux relief.",
+    genericPrice:10, brandPrice:29 },
+  { id:8, name:"Nexium", brand:"Nexium", genericName:"Esomeprazole", category:"Antacid", dosage:"20mg", form:"Capsules", pack:"14 capsules", icon:"💊",
+    description:"A once-daily capsule that reduces the stomach's acid production over time.",
+    use:"Frequent heartburn and acid reflux.",
+    genericPrice:12, brandPrice:38 },
+  { id:9, name:"Augmentin", brand:"Augmentin", genericName:"Amoxicillin + Clavulanic Acid", category:"Antibiotic", dosage:"625mg", form:"Tablets", pack:"14 tablets", icon:"💊",
+    description:"A broad-spectrum antibiotic tablet prescribed for a range of bacterial infections.",
+    use:"Bacterial infections (e.g. chest, throat, sinus).",
+    genericPrice:15, brandPrice:45 },
+  { id:10, name:"Zithromax", brand:"Zithromax", genericName:"Azithromycin", category:"Antibiotic", dosage:"500mg", form:"Tablets", pack:"3 tablets", icon:"💊",
+    description:"A short 3-day antibiotic course often prescribed for respiratory infections.",
+    use:"Bacterial respiratory and skin infections.",
+    genericPrice:18, brandPrice:52 },
+  { id:11, name:"Centrum", brand:"Centrum", genericName:"Multivitamin & Mineral", category:"Vitamins", dosage:"Daily dose", form:"Tablets", pack:"30 tablets", icon:"💊",
+    description:"A daily multivitamin covering everyday nutritional gaps.",
+    use:"General daily vitamin and mineral support.",
+    genericPrice:20, brandPrice:55 },
+  { id:12, name:"Redoxon", brand:"Redoxon", genericName:"Vitamin C", category:"Vitamins", dosage:"1000mg", form:"Effervescent Tablets", pack:"10 tablets", icon:"🫧",
+    description:"A fizzy, orange-flavoured tablet dissolved in water for a daily vitamin C boost.",
+    use:"Immune support and vitamin C top-up.",
+    genericPrice:9, brandPrice:28 },
+  { id:13, name:"Theraflu", brand:"Theraflu", genericName:"Paracetamol + Antihistamine", category:"Cold & Flu", dosage:"325mg / 2mg", form:"Powder Sachets", pack:"6 sachets", icon:"🧴",
+    description:"A warm lemon drink mixed from a sachet to ease cold symptoms before bed.",
+    use:"Night-time cold and flu relief.",
+    genericPrice:11, brandPrice:32 },
+  { id:14, name:"Glucophage", brand:"Glucophage", genericName:"Metformin", category:"Diabetes", dosage:"500mg", form:"Tablets", pack:"30 tablets", icon:"💊",
+    description:"A widely used tablet that helps the body manage blood sugar levels.",
+    use:"Management of type 2 diabetes.",
+    genericPrice:8, brandPrice:26 },
+  { id:15, name:"Januvia", brand:"Januvia", genericName:"Sitagliptin", category:"Diabetes", dosage:"100mg", form:"Tablets", pack:"28 tablets", icon:"💊",
+    description:"A once-daily tablet that helps the body release more of its own insulin after meals.",
+    use:"Management of type 2 diabetes.",
+    genericPrice:40, brandPrice:120 },
+  { id:16, name:"Norvasc", brand:"Norvasc", genericName:"Amlodipine", category:"Blood Pressure", dosage:"5mg", form:"Tablets", pack:"30 tablets", icon:"💊",
+    description:"A daily tablet that relaxes blood vessels to help control blood pressure.",
+    use:"Management of high blood pressure.",
+    genericPrice:9, brandPrice:27 },
+  { id:17, name:"Concor", brand:"Concor", genericName:"Bisoprolol", category:"Blood Pressure", dosage:"5mg", form:"Tablets", pack:"30 tablets", icon:"💊",
+    description:"A tablet that steadies heart rate and helps manage blood pressure.",
+    use:"Management of high blood pressure.",
+    genericPrice:11, brandPrice:34 },
+  { id:18, name:"Lipitor", brand:"Lipitor", genericName:"Atorvastatin", category:"Cholesterol", dosage:"20mg", form:"Tablets", pack:"30 tablets", icon:"💊",
+    description:"A once-daily tablet that helps lower cholesterol levels over time.",
+    use:"Management of high cholesterol.",
+    genericPrice:14, brandPrice:44 },
+  { id:19, name:"Crestor", brand:"Crestor", genericName:"Rosuvastatin", category:"Cholesterol", dosage:"10mg", form:"Tablets", pack:"30 tablets", icon:"💊",
+    description:"A daily tablet used long-term to keep cholesterol within a healthy range.",
+    use:"Management of high cholesterol.",
+    genericPrice:16, brandPrice:49 },
+  { id:20, name:"Panadol Night", brand:"Panadol", genericName:"Paracetamol + Diphenhydramine", category:"Cold & Flu", dosage:"500mg / 25mg", form:"Tablets", pack:"20 tablets", icon:"💊",
+    description:"An evening tablet that eases aches and helps you rest while your body recovers.",
+    use:"Night-time pain relief that supports sleep.",
+    genericPrice:10, brandPrice:30 }
+];
+
+/* =========================================================
+   2. SCORING CONFIG  (edit thresholds/points here)
+   ========================================================= */
+const SCORING = {
+  game1Thresholds: [
+    { withinPercent: 5,  points: 1000, tier:"incredible" },
+    { withinPercent: 10, points: 750,  tier:"veryclose" },
+    { withinPercent: 20, points: 500,  tier:"veryclose" },
+    { withinPercent: 30, points: 250,  tier:"notbad" },
+    { withinPercent: Infinity, points: 100, tier:"wayoff" }
+  ],
+  game2Correct: 500,
+  game2StreakBonuses: [
+    { streak:3, bonus:250 },
+    { streak:5, bonus:500 },
+    { streak:7, bonus:1000 }
+  ],
+  game3CorrectSide: 500,
+  game3ClosePriceBonus: 250,   // per price guess within 15% of actual
+  game3ClosePricePercent: 15
+};
+
+const TIMER_DEFAULT_SECONDS = 20;
+const GAME1_ROUND = [1,2,5,7,9,11,14,18];       // medication ids used in Guess the Price
+const GAME2_CHAIN = [1,2,3,7,13,16];             // medication ids used in Higher or Lower (in order)
+const GAME3_PAIRS = [1,4,7,9,14,18];             // medication ids used in Generic vs Brand
+
+function medById(id){ return MEDS.find(m => m.id === id); }
+function fmtAED(n){ return "AED " + Math.round(n); }
+function pctDiff(guess, actual){ return Math.abs(guess - actual) / actual * 100; }
+
+/* =========================================================
+   3. STATE
+   ========================================================= */
+const STORAGE_KEY = "medPriceChallengeState_v1";
+
+function freshState(){
+  return {
+    view: "home",
+    mode: "host",
+    soundOn: true,
+    teams: [ { name:"Team A", score:0 }, { name:"Team B", score:0 } ],
+    activeTeamIdx: 0,
+    g1: { i:0, guess:"", revealed:false, timer: TIMER_DEFAULT_SECONDS, timerRunning:false, lastPoints:0 },
+    g2: { i:0, choice:null, revealed:false, streak:0, bestStreak:0, results:[], finished:false },
+    g3: { i:0, genericGuess:"", brandGuess:"", sideChoice:null, revealed:false }
+  };
+}
+let state = loadState() || freshState();
+
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ /* storage unavailable, continue silently */ }
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    if(parsed && parsed.g1 && parsed.g2 && parsed.g3) return parsed;
+    return null;
+  }catch(e){ return null; }
+}
+
+let timerHandle = null;
+
+/* =========================================================
+   4. SOUND (tiny WebAudio beeps, no external files)
+   ========================================================= */
+let audioCtx = null;
+function ensureAudio(){
+  if(!state.soundOn) return null;
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }catch(e){ return null; }
+}
+function beep(freq, duration, type, gainVal){
+  const ctx = ensureAudio();
+  if(!ctx) return;
+  try{
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.value = freq;
+    gain.gain.value = (gainVal !== undefined ? gainVal : 0.06);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    osc.stop(ctx.currentTime + duration + 0.02);
+  }catch(e){ /* ignore audio errors */ }
+}
+const SFX = {
+  tick: () => beep(880, 0.05, "square", 0.03),
+  timeUp: () => beep(220, 0.4, "sawtooth", 0.06),
+  reveal: () => { beep(440,0.12,"triangle"); setTimeout(()=>beep(660,0.14,"triangle"),110); setTimeout(()=>beep(880,0.2,"triangle"),230); },
+  correct: () => { beep(660,0.1,"square"); setTimeout(()=>beep(990,0.16,"square"),100); },
+  wrong: () => beep(150,0.35,"sawtooth",0.06),
+  click: () => beep(520,0.04,"square",0.025),
+  streak: () => { beep(600,0.08,"square"); setTimeout(()=>beep(800,0.08,"square"),90); setTimeout(()=>beep(1000,0.14,"square"),180); },
+  win: () => { [523,659,784,1047].forEach((f,i)=> setTimeout(()=>beep(f,0.22,"triangle",0.05), i*130) ); }
+};
+
+/* =========================================================
+   5. SCORING HELPERS
+   ========================================================= */
+function tierLabel(tier){
+  return { incredible:"INCREDIBLE GUESS!", veryclose:"VERY CLOSE!", notbad:"NOT BAD!", wayoff:"WAY OFF!" }[tier];
+}
+function scoreGame1(guess, actual){
+  const diff = pctDiff(guess, actual);
+  for(const t of SCORING.game1Thresholds){
+    if(diff <= t.withinPercent) return { points: t.points, tier: t.tier, diffPercent: diff };
+  }
+  return { points: 100, tier:"wayoff", diffPercent: diff };
+}
+function streakBonusFor(streak){
+  let bonus = 0;
+  SCORING.game2StreakBonuses.forEach(b => { if(streak === b.streak) bonus = b.bonus; });
+  return bonus;
+}
+function activeTeam(){ return state.teams[state.activeTeamIdx] || state.teams[0]; }
+function awardPoints(pts){
+  if(!state.teams.length) return;
+  activeTeam().score += pts;
+}
+
+/* =========================================================
+   6. RENDER: ROOT
+   ========================================================= */
+const stageEl = document.getElementById("stage");
+const dockEl = document.getElementById("hostDock");
+const appEl = document.getElementById("app");
+
+function render(){
+  appEl.classList.toggle("host-mode", state.mode === "host");
+  document.getElementById("modeToggle").textContent = state.mode === "host" ? "🎛️ Host View" : "📺 Audience View";
+  document.getElementById("soundToggle").textContent = state.soundOn ? "🔊 Sound On" : "🔇 Sound Off";
+  renderStage();
+  renderDock();
+  saveState();
+}
+
+function progressBar(current, total){
+  const pct = Math.round(((current+1)/total)*100);
+  return `<div class="progress-row">
+    <span class="progress-pill">QUESTION ${current+1} / ${total}</span>
+    <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+  </div>`;
+}
+
+function medCardHTML(m){
+  return `<div class="med-card">
+    <div class="med-icon">${m.icon}</div>
+    <div class="med-body">
+      <div class="brand-tag">${m.brand} · ${m.category}</div>
+      <h2>${m.name}</h2>
+      <div class="med-meta">
+        <span><b>Active ingredient:</b> ${m.genericName}</span>
+        <span><b>Form:</b> ${m.form}</span>
+        <span><b>Dosage:</b> ${m.dosage}</span>
+        <span><b>Pack:</b> ${m.pack}</span>
+      </div>
+      <p class="med-desc"><b style="color:#241f13">Used for:</b> ${m.use}<br>${m.description}</p>
+    </div>
+  </div>`;
+}
+
+function timerRingHTML(){
+  const total = TIMER_DEFAULT_SECONDS;
+  const left = state.g1.timer;
+  const circumference = 2 * Math.PI * 52;
+  const offset = circumference * (1 - left/total);
+  const urgent = left <= 5 && left > 0;
+  return `<div class="timer-wrap"><div class="timer-ring">
+    <svg viewBox="0 0 120 120">
+      <circle class="bg" cx="60" cy="60" r="52"></circle>
+      <circle class="fg" cx="60" cy="60" r="52" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"></circle>
+    </svg>
+    <div class="timer-num ${urgent ? 'urgent':''}">${left}</div>
+  </div></div>`;
+}
+
+/* =========================================================
+   7. STAGE VIEWS
+   ========================================================= */
+function renderStage(){
+  let html = "";
+  if(state.view === "home") html = viewHome();
+  else if(state.view === "game1") html = viewGame1();
+  else if(state.view === "game2") html = viewGame2();
+  else if(state.view === "game3") html = viewGame3();
+  else if(state.view === "leaderboard") html = viewLeaderboard();
+  else if(state.view === "winner") html = viewWinner();
+  stageEl.innerHTML = `<div class="stage-inner">${html}</div>`;
+}
+
+function viewHome(){
+  return `
+  <div class="home-hero">
+    <h1>THE MEDICATION<br>PRICE CHALLENGE</h1>
+    <p class="sub">How well do you really know the price of medicine?</p>
+  </div>
+  <div class="mode-grid">
+    <button class="mode-card" style="--accent:#F4B31A" data-action="goto" data-view="game1">
+      <div class="num">GAME SHOW 01</div>
+      <h3>Guess the Price</h3>
+      <p>See a medication, guess its price, and find out how close the room really was.</p>
+      <div class="go">PLAY →</div>
+    </button>
+    <button class="mode-card" style="--accent:#2FE0C4" data-action="goto" data-view="game2">
+      <div class="num">GAME SHOW 02</div>
+      <h3>Higher or Lower</h3>
+      <p>One price is revealed. Is the next medication higher or lower? Keep the streak alive.</p>
+      <div class="go">PLAY →</div>
+    </button>
+    <button class="mode-card" style="--accent:#FF6B57" data-action="goto" data-view="game3">
+      <div class="num">GAME SHOW 03</div>
+      <h3>Generic vs Brand</h3>
+      <p>Same medicine, two price tags. See exactly what a brand name costs you.</p>
+      <div class="go">PLAY →</div>
+    </button>
+  </div>
+  <div class="btn-row">
+    <button class="btn secondary" data-action="goto" data-view="leaderboard">🏆 View Leaderboard</button>
+  </div>`;
+}
+
+/* ---- GAME 1: GUESS THE PRICE ---- */
+function viewGame1(){
+  const total = GAME1_ROUND.length;
+  const m = medById(GAME1_ROUND[state.g1.i]);
+  let body = "";
+
+  if(!state.g1.revealed){
+    body = `
+      <div class="prompt-banner">
+        <h3>How much do you think this costs?</h3>
+        <div class="hint">${state.mode === "host" ? "Let the audience discuss, then enter their guess in the host panel." : "Discuss with your team and get ready to guess!"}</div>
+      </div>
+      ${timerRingHTML()}
+      ${ state.g1.guess !== "" ? `<div class="value-card guess" style="max-width:280px;margin:0 auto 10px;"><div class="label">CURRENT GUESS</div><div class="amount">${fmtAED(Number(state.g1.guess))}</div></div>` : "" }
+    `;
+  } else {
+    const actual = m.brandPrice;
+    const guess = Number(state.g1.guess) || 0;
+    const diff = Math.abs(guess - actual);
+    const result = scoreGame1(guess, actual);
+    const sign = guess >= actual ? "above" : "below";
+    body = `
+      <div class="reveal-grid">
+        <div class="value-card guess"><div class="label">YOUR GUESS</div><div class="amount">${fmtAED(guess)}</div></div>
+        <div class="diff-arrow"><div class="arrow">↔</div><div class="amt">${fmtAED(diff)} diff.</div></div>
+        <div class="value-card actual"><div class="label">ACTUAL PRICE</div><div class="amount">${fmtAED(actual)}</div></div>
+      </div>
+      <div class="verdict">
+        <div class="badge tier-${result.tier}">${tierLabel(result.tier)}</div>
+        <div class="sub">You were ${Math.round(result.diffPercent)}% ${sign} the actual price.</div>
+        <div class="points-toast">+${result.points} points → ${activeTeam().name}</div>
+      </div>
+    `;
+  }
+
+  return `
+    ${progressBar(state.g1.i, total)}
+    <div class="eyebrow-note">GAME SHOW 01 · GUESS THE PRICE</div>
+    ${medCardHTML(m)}
+    ${body}
+  `;
+}
+
+/* ---- GAME 2: HIGHER OR LOWER ---- */
+function viewGame2(){
+  const total = GAME2_CHAIN.length;
+  const chainHTML = GAME2_CHAIN.map((id, idx) => {
+    let cls = "chain-node";
+    if(idx < state.g2.i) cls += state.g2.results[idx] === "correct" ? " done-correct" : (state.g2.results[idx]==="wrong" ? " done-wrong" : "");
+    if(idx === state.g2.i) cls += " current";
+    return `<div class="${cls}">${idx+1}</div>` + (idx < total-1 ? `<div class="chain-connector"></div>` : "");
+  }).join("");
+
+  if(state.g2.finished){
+    return `
+      <div class="eyebrow-note">GAME SHOW 02 · HIGHER OR LOWER</div>
+      <div class="chain-row">${chainHTML}</div>
+      <div class="verdict">
+        <div class="badge tier-incredible">CHAIN COMPLETE!</div>
+        <div class="sub" style="font-size:20px;margin-top:14px;">FINAL STREAK: <b style="color:var(--gold)">${state.g2.bestStreak}</b></div>
+      </div>
+      <div class="btn-row"><button class="btn" data-action="g2-reset">🔁 Start New Chain</button></div>
+    `;
+  }
+
+  const currentId = GAME2_CHAIN[state.g2.i];
+  const m = medById(currentId);
+  const isFirst = state.g2.i === 0;
+
+  if(isFirst && !state.g2.revealed){
+    // first medication: price is shown immediately (baseline), host just reveals to start
+    return `
+      ${progressBar(state.g2.i, total)}
+      <div class="eyebrow-note">GAME SHOW 02 · HIGHER OR LOWER</div>
+      <div class="chain-row">${chainHTML}</div>
+      ${medCardHTML(m)}
+      <div class="prompt-banner"><h3>Let's set the baseline price...</h3></div>
+      <div class="btn-row"><button class="btn" data-action="g2-reveal-first">Reveal Starting Price</button></div>
+    `;
+  }
+
+  const baselinePrice = medById(isFirst ? currentId : GAME2_CHAIN[state.g2.i-1]).brandPrice;
+
+  let mid = "";
+  if(isFirst && state.g2.revealed){
+    mid = `
+      <div class="value-card actual" style="max-width:320px;margin:14px auto;"><div class="label">ACTUAL PRICE</div><div class="amount">${fmtAED(m.brandPrice)}</div></div>
+      <div class="btn-row"><button class="btn" data-action="g2-next">Next Medication →</button></div>
+    `;
+  } else if(!state.g2.revealed){
+    mid = `
+      <div class="known-price-strip">Known price so far: <b>${fmtAED(baselinePrice)}</b></div>
+      <div class="prompt-banner"><h3>Is this medication HIGHER or LOWER than ${fmtAED(baselinePrice)}?</h3>
+      <div class="hint">${state.mode==="host" ? "Record what the audience shouts out in the host panel." : "Shout out your answer: Higher or Lower!"}</div></div>
+      <div class="hilo-buttons">
+        <div class="hilo-btn up ${state.g2.choice==='higher' ? 'selected up':''}">⬆ HIGHER</div>
+        <div class="hilo-btn down ${state.g2.choice==='lower' ? 'selected down':''}">⬇ LOWER</div>
+      </div>
+    `;
+  } else {
+    const actual = m.brandPrice;
+    const correct = (state.g2.choice === "higher" && actual > baselinePrice) || (state.g2.choice === "lower" && actual < baselinePrice);
+    const diff = Math.abs(actual - baselinePrice);
+    mid = `
+      <div class="verdict">
+        <div class="badge ${correct ? 'tier-veryclose':'tier-wayoff'}">${correct ? 'CORRECT!' : 'NOT QUITE!'}</div>
+        <div class="sub">${fmtAED(actual)} is ${actual > baselinePrice ? 'HIGHER' : 'LOWER'} than ${fmtAED(baselinePrice)}.</div>
+        <div class="sub">${fmtAED(diff)} ${actual > baselinePrice ? 'more' : 'less'} expensive</div>
+      </div>
+      ${ state.g2.streak >= 2 ? `<div class="streak-banner">🔥 ${state.g2.streak} CORRECT IN A ROW</div>` : "" }
+      <div class="btn-row">
+        <button class="btn" data-action="g2-next">${state.g2.i >= total-1 ? 'Finish Chain 🏁' : 'Next Medication →'}</button>
+      </div>
+    `;
+  }
+
+  return `
+    ${progressBar(state.g2.i, total)}
+    <div class="eyebrow-note">GAME SHOW 02 · HIGHER OR LOWER</div>
+    <div class="chain-row">${chainHTML}</div>
+    ${medCardHTML(m)}
+    ${mid}
+  `;
+}
+
+/* ---- GAME 3: GENERIC VS BRAND ---- */
+function viewGame3(){
+  const total = GAME3_PAIRS.length;
+  const m = medById(GAME3_PAIRS[state.g3.i]);
+
+  const genericCard = `
+    <div class="vs-card">
+      <div class="kind">GENERIC</div>
+      <h3>${m.genericName}</h3>
+      <div class="row"><b>Used for:</b> ${m.use}</div>
+      <div class="row"><b>Form:</b> ${m.form} · <b>Dosage:</b> ${m.dosage}</div>
+      <div class="row"><b>Pack:</b> ${m.pack}</div>
+      <div class="row" style="margin-top:8px;">${m.description}</div>
+    </div>`;
+  const brandCard = `
+    <div class="vs-card">
+      <div class="kind">BRANDED</div>
+      <h3>${m.name}</h3>
+      <div class="row"><b>Brand:</b> ${m.brand}</div>
+      <div class="row"><b>Form:</b> ${m.form} · <b>Dosage:</b> ${m.dosage}</div>
+      <div class="row"><b>Pack:</b> ${m.pack}</div>
+      <div class="row" style="margin-top:8px;">Same active ingredient as the generic version, sold under a brand name.</div>
+    </div>`;
+
+  let body = "";
+  if(!state.g3.revealed){
+    body = `
+      <div class="prompt-banner">
+        <h3>Which one do you think costs more?</h3>
+        <div class="hint">${state.mode==="host" ? "Enter the audience's guesses in the host panel, then reveal." : "Discuss — and guess a price for each if you can!"}</div>
+      </div>
+      ${ (state.g3.genericGuess !== "" || state.g3.brandGuess !== "") ? `
+        <div class="reveal-grid" style="margin-top:0;">
+          <div class="value-card guess"><div class="label">GENERIC GUESS</div><div class="amount">${state.g3.genericGuess!=="" ? fmtAED(state.g3.genericGuess) : "–"}</div></div>
+          <div></div>
+          <div class="value-card guess"><div class="label">BRAND GUESS</div><div class="amount">${state.g3.brandGuess!=="" ? fmtAED(state.g3.brandGuess) : "–"}</div></div>
+        </div>` : "" }
+    `;
+  } else {
+    const gDiff = SCORING.game3ClosePricePercent;
+    const genOk = state.g3.genericGuess !== "" && pctDiff(Number(state.g3.genericGuess), m.genericPrice) <= gDiff;
+    const brOk = state.g3.brandGuess !== "" && pctDiff(Number(state.g3.brandGuess), m.brandPrice) <= gDiff;
+    const diff = m.brandPrice - m.genericPrice;
+    const multiplier = (m.brandPrice / m.genericPrice).toFixed(1);
+    body = `
+      <div class="vs-result">
+        <div class="value-card ${genOk ? 'actual':'guess'}"><div class="label">GENERIC ACTUAL</div><div class="amount">${fmtAED(m.genericPrice)}</div></div>
+        <div class="value-card actual"><div class="label">BRAND ACTUAL</div><div class="amount">${fmtAED(m.brandPrice)}</div></div>
+      </div>
+      <div class="multiplier-banner">BRANDED IS ${fmtAED(diff)} MORE EXPENSIVE</div>
+      <div class="multiplier-sub">That's about ${multiplier}× the price of the generic version.</div>
+      <div class="points-toast">+${(state.g3.sideChoice==='brand'?SCORING.game3CorrectSide:0) + (genOk?SCORING.game3ClosePriceBonus:0) + (brOk?SCORING.game3ClosePriceBonus:0)} points → ${activeTeam().name}</div>
+    `;
+  }
+
+  return `
+    ${progressBar(state.g3.i, total)}
+    <div class="eyebrow-note">GAME SHOW 03 · GENERIC VS BRAND</div>
+    <div class="vs-grid">
+      ${genericCard}
+      <div class="vs-mid"><div class="badge-vs">VS</div></div>
+      ${brandCard}
+    </div>
+    ${body}
+  `;
+}
+
+/* ---- LEADERBOARD / WINNER ---- */
+function viewLeaderboard(){
+  const sorted = state.teams.map((t,i)=>({...t, idx:i})).sort((a,b)=>b.score-a.score);
+  const rows = sorted.map((t, rank) => `
+    <div class="lb-row ${rank===0 ? 'rank-1':''}">
+      <div class="lb-rank">${rank+1}</div>
+      <div class="lb-name">${t.name}${t.idx===state.activeTeamIdx ? ' <span style="color:var(--gold);font-size:12px;">● active</span>':''}</div>
+      <div class="lb-score">${t.score.toLocaleString()}</div>
+    </div>`).join("");
+  return `
+    <div class="eyebrow-note">LIVE LEADERBOARD</div>
+    <div class="lb-list">${rows || '<div class="mini-note">No teams yet — add teams from the host panel.</div>'}</div>
+    <div class="btn-row"><button class="btn" data-action="goto" data-view="winner">🏆 Show Winner</button></div>
+  `;
+}
+
+function viewWinner(){
+  const sorted = [...state.teams].sort((a,b)=>b.score-a.score);
+  const top = sorted[0];
+  return `
+    <div class="winner-hero">
+      <div class="trophy">🏆</div>
+      <div class="eyebrow-note" style="margin-top:6px;">AND THE WINNER IS...</div>
+      <h2>${top ? top.name : "—"}</h2>
+      <div class="score">${top ? top.score.toLocaleString()+" points" : ""}</div>
+    </div>
+    <div class="lb-list">${sorted.map((t,rank)=>`
+      <div class="lb-row ${rank===0?'rank-1':''}"><div class="lb-rank">${rank+1}</div><div class="lb-name">${t.name}</div><div class="lb-score">${t.score.toLocaleString()}</div></div>
+    `).join("")}</div>
+    <div class="btn-row">
+      <button class="btn secondary" data-action="goto" data-view="home">🏠 Back to Menu</button>
+    </div>
+  `;
+}
+
+/* =========================================================
+   8. HOST DOCK
+   ========================================================= */
+function renderDock(){
+  let html = `<div class="dock-title">HOST CONTROL PANEL</div><div class="dock-sub">You should understand this panel in 30 seconds.</div>`;
+
+  html += teamManagerHTML();
+
+  if(state.view === "home"){
+    html += `<div class="steps-hint">Pick a game show below to begin. The big screen (left) is what your audience sees.</div>`;
+  } else if(state.view === "game1"){
+    html += dockGame1();
+  } else if(state.view === "game2"){
+    html += dockGame2();
+  } else if(state.view === "game3"){
+    html += dockGame3();
+  } else if(state.view === "leaderboard" || state.view === "winner"){
+    html += `<div class="dock-section"><h4>Round Control</h4>
+      <div class="dock-grid">
+        <button class="btn secondary" data-action="goto" data-view="home">🏠 Menu</button>
+        <button class="btn secondary" data-action="reset-all">♻️ Reset Game</button>
+      </div></div>`;
+  }
+
+  html += `<div class="dock-section"><h4>Anytime</h4>
+    <div class="dock-grid">
+      <button class="btn secondary" data-action="goto" data-view="leaderboard">🏆 Leaderboard</button>
+      <button class="btn ghost" data-action="reset-all">♻️ Reset Everything</button>
+    </div>
+  </div>`;
+
+  dockEl.innerHTML = html;
+}
+
+function teamManagerHTML(){
+  const rows = state.teams.map((t, i) => `
+    <div class="team-row">
+      <input type="text" class="field-input" data-team-name="${i}" value="${escapeAttr(t.name)}" style="font-size:13px;padding:8px 10px;">
+      <span style="font-family:var(--font-display);font-size:16px;color:var(--teal);min-width:54px;text-align:right;">${t.score}</span>
+      <button class="small-btn" data-action="remove-team" data-idx="${i}" title="Remove team">✕</button>
+    </div>
+  `).join("");
+  return `
+  <div class="dock-section">
+    <h4>Teams &amp; Active Scorer</h4>
+    <div class="active-team-pill">
+      <span>Points go to: <b style="color:var(--teal)">${activeTeam() ? activeTeam().name : "—"}</b></span>
+      <select id="activeTeamSelect" style="background:var(--stage-2);color:var(--text-hi);border:1px solid var(--line);border-radius:7px;padding:4px 6px;">
+        ${state.teams.map((t,i)=>`<option value="${i}" ${i===state.activeTeamIdx?'selected':''}>${escapeAttr(t.name)}</option>`).join("")}
+      </select>
+    </div>
+    ${rows}
+    <button class="small-btn" data-action="add-team" style="width:100%;margin-top:4px;">+ Add Team</button>
+    <div class="mini-note">Switch "Points go to" before each reveal so the right team gets credit.</div>
+  </div>`;
+}
+
+function escapeAttr(s){ return String(s).replace(/"/g,"&quot;"); }
+
+function dockGame1(){
+  const total = GAME1_ROUND.length;
+  const m = medById(GAME1_ROUND[state.g1.i]);
+  return `
+  <div class="now-playing"><span class="dot"></span> Guess the Price — ${m.name} (${state.g1.i+1}/${total})</div>
+  <div class="dock-section">
+    <h4>1 · Countdown</h4>
+    <div class="dock-grid">
+      <button class="btn secondary" data-action="g1-timer-start" ${state.g1.timerRunning?'disabled':''}>▶ Start Timer</button>
+      <button class="btn secondary" data-action="g1-timer-reset">↺ Reset Timer</button>
+    </div>
+  </div>
+  <div class="dock-section">
+    <h4>2 · Enter Audience Guess (AED)</h4>
+    <input type="number" min="0" class="field-input" id="g1GuessInput" placeholder="e.g. 75" value="${state.g1.guess}">
+    <div class="dock-grid" style="margin-top:8px;">
+      <button class="btn" data-action="g1-reveal" ${state.g1.revealed?'disabled':''}>🎉 Reveal Actual Price</button>
+      <button class="btn secondary" data-action="g1-hide">🙈 Hide Answer</button>
+    </div>
+  </div>
+  <div class="dock-section">
+    <h4>3 · Navigate</h4>
+    <div class="dock-grid">
+      <button class="btn secondary" data-action="g1-prev" ${state.g1.i===0?'disabled':''}>← Previous</button>
+      <button class="btn secondary" data-action="g1-next" ${state.g1.i>=total-1?'disabled':''}>Next →</button>
+    </div>
+    <button class="btn ghost" data-action="g1-reset-round" style="width:100%;margin-top:8px;">Reset This Round</button>
+  </div>`;
+}
+
+function dockGame2(){
+  const total = GAME2_CHAIN.length;
+  return `
+  <div class="now-playing"><span class="dot"></span> Higher or Lower — Question ${Math.min(state.g2.i+1,total)}/${total} · Streak ${state.g2.streak}</div>
+  <div class="dock-section">
+    <h4>Record Audience Answer</h4>
+    <div class="dock-grid">
+      <button class="btn secondary" data-action="g2-choose-higher" ${state.g2.revealed || state.g2.i===0 ?'disabled':''}>⬆ Audience: Higher</button>
+      <button class="btn secondary" data-action="g2-choose-lower" ${state.g2.revealed || state.g2.i===0 ?'disabled':''}>⬇ Audience: Lower</button>
+    </div>
+    <button class="btn" data-action="g2-reveal" style="width:100%;margin-top:8px;" ${state.g2.revealed || state.g2.i===0 || !state.g2.choice ? 'disabled':''}>🎉 Reveal Price</button>
+  </div>
+  <div class="dock-section">
+    <h4>Round Control</h4>
+    <div class="mini-note">Best streak this round: 🔥 ${state.g2.bestStreak}</div>
+    <button class="btn ghost" data-action="g2-reset" style="width:100%;margin-top:8px;">Reset Chain</button>
+  </div>`;
+}
+
+function dockGame3(){
+  const total = GAME3_PAIRS.length;
+  const m = medById(GAME3_PAIRS[state.g3.i]);
+  return `
+  <div class="now-playing"><span class="dot"></span> Generic vs Brand — ${m.name} (${state.g3.i+1}/${total})</div>
+  <div class="dock-section">
+    <h4>1 · Which costs more?</h4>
+    <div class="dock-grid">
+      <button class="btn secondary" data-action="g3-side-generic" ${state.g3.sideChoice==='generic'?'style="outline:2px solid var(--gold)"':''}>Generic</button>
+      <button class="btn secondary" data-action="g3-side-brand" ${state.g3.sideChoice==='brand'?'style="outline:2px solid var(--gold)"':''}>Brand</button>
+    </div>
+  </div>
+  <div class="dock-section">
+    <h4>2 · Price Guesses (AED, optional)</h4>
+    <div class="field-label">Generic guess</div>
+    <input type="number" min="0" class="field-input" id="g3GenericInput" value="${state.g3.genericGuess}">
+    <div class="field-label">Brand guess</div>
+    <input type="number" min="0" class="field-input" id="g3BrandInput" value="${state.g3.brandGuess}">
+  </div>
+  <div class="dock-section">
+    <h4>3 · Reveal &amp; Navigate</h4>
+    <button class="btn" data-action="g3-reveal" style="width:100%;" ${state.g3.revealed?'disabled':''}>🎉 Reveal Actual Prices</button>
+    <div class="dock-grid" style="margin-top:8px;">
+      <button class="btn secondary" data-action="g3-prev" ${state.g3.i===0?'disabled':''}>← Previous</button>
+      <button class="btn secondary" data-action="g3-next" ${state.g3.i>=total-1?'disabled':''}>Next →</button>
+    </div>
+  </div>`;
+}
+
+/* =========================================================
+   9. TIMER LOGIC
+   ========================================================= */
+function startTimer(){
+  if(timerHandle) return;
+  state.g1.timerRunning = true;
+  timerHandle = setInterval(() => {
+    state.g1.timer -= 1;
+    if(state.g1.timer <= 5 && state.g1.timer > 0) SFX.tick();
+    if(state.g1.timer <= 0){
+      state.g1.timer = 0;
+      stopTimer();
+      SFX.timeUp();
+    }
+    render();
+  }, 1000);
+}
+function stopTimer(){
+  if(timerHandle){ clearInterval(timerHandle); timerHandle = null; }
+  state.g1.timerRunning = false;
+}
+function resetTimer(){
+  stopTimer();
+  state.g1.timer = TIMER_DEFAULT_SECONDS;
+}
+
+/* =========================================================
+   10. ACTIONS
+   ========================================================= */
+function goto(view){
+  state.view = view;
+  render();
+}
+
+function resetGame1Question(){
+  state.g1.guess = "";
+  state.g1.revealed = false;
+  resetTimer();
+}
+function resetGame2(){
+  state.g2 = { i:0, choice:null, revealed:false, streak:0, bestStreak:0, results:[], finished:false };
+}
+function resetGame3Question(){
+  state.g3.genericGuess = "";
+  state.g3.brandGuess = "";
+  state.g3.sideChoice = null;
+  state.g3.revealed = false;
+}
+function resetAll(){
+  stopTimer();
+  const keepMode = state.mode, keepSound = state.soundOn;
+  state = freshState();
+  state.mode = keepMode;
+  state.soundOn = keepSound;
+  render();
+}
+
+document.addEventListener("click", function(e){
+  const btn = e.target.closest("[data-action]");
+  if(!btn) return;
+  const action = btn.getAttribute("data-action");
+  SFX.click();
+
+  switch(action){
+    case "goto":
+      goto(btn.getAttribute("data-view"));
+      break;
+
+    case "add-team":
+      state.teams.push({ name: "Team " + String.fromCharCode(65 + state.teams.length), score:0 });
+      render();
+      break;
+    case "remove-team": {
+      const idx = Number(btn.getAttribute("data-idx"));
+      if(state.teams.length > 1){
+        state.teams.splice(idx,1);
+        if(state.activeTeamIdx >= state.teams.length) state.activeTeamIdx = 0;
+      }
+      render();
+      break;
+    }
+
+    case "reset-all":
+      if(confirm("Reset the entire game? All scores and progress will be cleared.")) resetAll();
+      break;
+
+    /* ---- Game 1 ---- */
+    case "g1-timer-start": startTimer(); render(); break;
+    case "g1-timer-reset": resetTimer(); render(); break;
+    case "g1-reveal": {
+      const guessInput = document.getElementById("g1GuessInput");
+      state.g1.guess = guessInput ? guessInput.value : state.g1.guess;
+      if(state.g1.guess === "" || isNaN(Number(state.g1.guess))){ alert("Enter the audience's guess first."); return; }
+      stopTimer();
+      state.g1.revealed = true;
+      const m = medById(GAME1_ROUND[state.g1.i]);
+      const result = scoreGame1(Number(state.g1.guess), m.brandPrice);
+      state.g1.lastPoints = result.points;
+      awardPoints(result.points);
+      SFX.reveal();
+      setTimeout(()=> (result.tier==="incredible"||result.tier==="veryclose") ? SFX.correct() : null, 500);
+      render();
+      break;
+    }
+    case "g1-hide": state.g1.revealed = false; render(); break;
+    case "g1-next":
+      if(state.g1.i < GAME1_ROUND.length-1){ state.g1.i++; resetGame1Question(); render(); }
+      break;
+    case "g1-prev":
+      if(state.g1.i > 0){ state.g1.i--; resetGame1Question(); render(); }
+      break;
+    case "g1-reset-round": resetGame1Question(); render(); break;
+
+    /* ---- Game 2 ---- */
+    case "g2-reveal-first":
+      state.g2.revealed = true;
+      SFX.reveal();
+      render();
+      break;
+    case "g2-choose-higher": state.g2.choice = "higher"; render(); break;
+    case "g2-choose-lower": state.g2.choice = "lower"; render(); break;
+    case "g2-reveal": {
+      const idx = state.g2.i;
+      const baseline = medById(idx===0 ? GAME2_CHAIN[0] : GAME2_CHAIN[idx-1]).brandPrice;
+      const actual = medById(GAME2_CHAIN[idx]).brandPrice;
+      const correct = (state.g2.choice==="higher" && actual>baseline) || (state.g2.choice==="lower" && actual<baseline);
+      state.g2.results[idx] = correct ? "correct" : "wrong";
+      state.g2.revealed = true;
+      SFX.reveal();
+      if(correct){
+        state.g2.streak++;
+        state.g2.bestStreak = Math.max(state.g2.bestStreak, state.g2.streak);
+        const bonus = streakBonusFor(state.g2.streak);
+        awardPoints(SCORING.game2Correct + bonus);
+        setTimeout(()=> bonus>0 ? SFX.streak() : SFX.correct(), 450);
+      } else {
+        state.g2.streak = 0;
+        setTimeout(SFX.wrong, 450);
+      }
+      render();
+      break;
+    }
+    case "g2-next":
+      if(state.g2.i >= GAME2_CHAIN.length-1){
+        state.g2.finished = true;
+      } else {
+        state.g2.i++;
+        state.g2.choice = null;
+        state.g2.revealed = false;
+      }
+      render();
+      break;
+    case "g2-reset": resetGame2(); render(); break;
+
+    /* ---- Game 3 ---- */
+    case "g3-side-generic": state.g3.sideChoice = "generic"; render(); break;
+    case "g3-side-brand": state.g3.sideChoice = "brand"; render(); break;
+    case "g3-reveal": {
+      const gi = document.getElementById("g3GenericInput");
+      const bi = document.getElementById("g3BrandInput");
+      state.g3.genericGuess = gi && gi.value !== "" ? gi.value : state.g3.genericGuess;
+      state.g3.brandGuess = bi && bi.value !== "" ? bi.value : state.g3.brandGuess;
+      state.g3.revealed = true;
+      const m = medById(GAME3_PAIRS[state.g3.i]);
+      let pts = 0;
+      if(state.g3.sideChoice === "brand") pts += SCORING.game3CorrectSide;
+      if(state.g3.genericGuess !== "" && pctDiff(Number(state.g3.genericGuess), m.genericPrice) <= SCORING.game3ClosePricePercent) pts += SCORING.game3ClosePriceBonus;
+      if(state.g3.brandGuess !== "" && pctDiff(Number(state.g3.brandGuess), m.brandPrice) <= SCORING.game3ClosePricePercent) pts += SCORING.game3ClosePriceBonus;
+      awardPoints(pts);
+      SFX.reveal();
+      setTimeout(()=> pts>0 ? SFX.correct() : SFX.wrong(), 450);
+      render();
+      break;
+    }
+    case "g3-next":
+      if(state.g3.i < GAME3_PAIRS.length-1){ state.g3.i++; resetGame3Question(); render(); }
+      break;
+    case "g3-prev":
+      if(state.g3.i > 0){ state.g3.i--; resetGame3Question(); render(); }
+      break;
+  }
+});
+
+document.addEventListener("change", function(e){
+  if(e.target.id === "activeTeamSelect"){
+    state.activeTeamIdx = Number(e.target.value);
+    render();
+  }
+  const teamNameIdx = e.target.getAttribute && e.target.getAttribute("data-team-name");
+  if(teamNameIdx !== null && teamNameIdx !== undefined){
+    state.teams[Number(teamNameIdx)].name = e.target.value || ("Team " + (Number(teamNameIdx)+1));
+    render();
+  }
+});
+
+document.getElementById("modeToggle").addEventListener("click", function(){
+  state.mode = state.mode === "host" ? "audience" : "host";
+  render();
+});
+document.getElementById("homeBtn").addEventListener("click", function(){
+  goto("home");
+});
+document.getElementById("soundToggle").addEventListener("click", function(){
+  state.soundOn = !state.soundOn;
+  if(state.soundOn) ensureAudio();
+  render();
+});
+
+/* Keep number inputs from resetting on every keystroke re-render by reading value on blur too */
+document.addEventListener("input", function(e){
+  if(e.target.id === "g1GuessInput") state.g1.guess = e.target.value;
+  if(e.target.id === "g3GenericInput") state.g3.genericGuess = e.target.value;
+  if(e.target.id === "g3BrandInput") state.g3.brandGuess = e.target.value;
+});
+
+/* =========================================================
+   11. INIT
+   ========================================================= */
+render();
+
+})();
+</script>
+</body>
+</html>
